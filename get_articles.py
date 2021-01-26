@@ -23,38 +23,56 @@ import datetime
 import time
 import pprint
 
+def get_pmc_ids(number = 0, requested_year = datetime.datetime.now().year):
+    '''
+        Method that returns a list of ids from Pub Med Central
+        Starts from number = 0 as the first item is at position 0
+    '''
+    results = []
+    while(True):
+        handle = Entrez.esearch(db = "pmc", term = "", mindate = str(requested_year), maxdate = str(requested_year), retstart = number, retmax = 100000)
+        record = Entrez.read(handle)
+        handle.close()
+
+        if(len(record['IdList']) == 0):
+            print("DONE")
+            break
+
+        number += 100000
+        results.extend(record['IdList'])
+    
+    return results
+
+# in development
+def get_full_text(id):
+    '''
+        Method that returns the full text of singular bodies such as: Abstract, Introduction, Methods, Results, Discussion
+        Any additional fields that might be relevant will be introduced.
+
+
+    '''
+
+    handle = Entrez.efetch(db = 'pmc', id = id, retmode = 'xml')
+    record = Medline.parse(handle)
+    for i in record:
+        pp.pprint(i)
+    handle.close()
+    
+# set the email for entrez and configure the pretty printer
 Entrez.email = "Test@example.org"
 pp = pprint.PrettyPrinter(indent = 5)
 
-year = datetime.datetime.now().year 
-manual_year = 2021 # the user can manually set the year and use this variable in order to get data from the server
-
-number = 0
-results = []
-
+#set the counter to check how long does it take for the program to run, in order to gather statistics
 start = time.perf_counter()
 
-while(True):
-    handle = Entrez.esearch(db = "pmc", term = "", mindate = str(year), maxdate = str(year), retstart = number, retmax = 1)
-    record = Entrez.read(handle)
-    handle.close()
-    pp.pprint(record)
-    break
-    if(len(record['IdList']) == 0):
-        print("DONE")
-        break
-    number += 100000
-    results.extend(record['IdList'])
+results = get_pmc_ids()
 
 finish = time.perf_counter()
-#print(len(results))
-#print(results)
+
+print(len(results))
+
 print(f'Finished in {round(finish - start, 2)} seconds(s)')
 
 
 
-h = Entrez.efetch(db = 'pmc', id = '7829055', retmode = 'xml')
-r = Medline.parse(h)
-for i in r:
-    pp.pprint(i)
-h.close()
+
