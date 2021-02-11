@@ -66,9 +66,10 @@ def data_cleaner(doc):
     '''
         Method that cleans the data. It uses BeautifulSoup in order to get the text from the XML file.
         It receives the string that contains document's XML text, parses it and then creates a list of the form "Name of Section \n Text of section".
+        It then parses the list and keeps the name of the section as list[0] and the text of the section as list[1]
     '''
     soup = BeautifulSoup(doc)
-    sections = [element.get_text().strip() for element in soup.find_all('sec')]
+    sections = [element.get_text().strip().split("\n") for element in soup.find_all('sec')]
     
 
 def get_full_text(id):
