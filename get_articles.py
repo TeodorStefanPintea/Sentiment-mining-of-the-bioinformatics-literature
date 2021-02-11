@@ -19,6 +19,7 @@
 
 from Bio import Entrez
 from Bio import Medline
+from bs4 import BeautifulSoup
 import datetime
 import time
 import pprint
@@ -61,10 +62,20 @@ def hasFullText(article):
 
 how = 0
 
+def data_cleaner(doc):
+    '''
+        Method that cleans the data. It uses BeautifulSoup in order to get the text from the XML file.
+        It receives the string that contains document's XML text, parses it and then creates a list of the form "Name of Section \n Text of section".
+    '''
+    soup = BeautifulSoup(doc)
+    sections = [element.get_text().strip() for element in soup.find_all('sec')]
+    
+
 def get_full_text(id):
     '''
         Method that returns the full text of singular bodies such as: Abstract, Introduction, Methods, Results, Discussion
         Any additional fields that might be relevant will be introduced.
+        Returns the text as string.
     '''
     global how
     try:
@@ -74,15 +85,18 @@ def get_full_text(id):
         else:
             pp.pprint(record) 
             pass
-        handle.close()   
+        handle.close()
+        return record
+
     except Exception as e:
         print(str(e) + " for ID:" + str(id))
-    
+
+    return ""
     
     
     
 # set the email for entrez and configure the pretty printer
-Entrez.email = "Test@example.org"
+Entrez.email = "stevenpintea@gmail.com"
 pp = pprint.PrettyPrinter(indent = 5)
 
 #set the counter to check how long does it take for the program to run, in order to gather statistics
@@ -101,7 +115,8 @@ for index, docID in enumerate([7760437]):
         print("To process: " + str(len(results)))
         print("Processed: " + str(index))
         print("Unable: " + str(how))
-    get_full_text(id = str(docID))
+        a = get_full_text(id = str(docID))
 
 print("FINAL   " +   str(how))
+
 
