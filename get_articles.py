@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 import datetime
 import time
 import pprint
+import re
 
 bad = 0
 good = 0
@@ -84,18 +85,20 @@ def data_cleaner(doc):
         soup = BeautifulSoup(doc, "html.parser")
         try:
             paper_abstract = soup.find_all('abstract')[-1].extract()
-            abstract_paragraphs = list(paper_abstract.find_all('p'))
+            para = paper_abstract.find_all('p')
+            for p in para:
+                abstract_paragraphs.append(str(p))
         except Exception as e:
              print(str(e) + " Paper does not have an abstract.")
         try:
             paper_body = soup.find_all('body')[-1].extract()
-            body_paragraphs = list(paper_body.find_all('p'))
+            para = paper_body.find_all('p')
+            for p in para:
+                body_paragraphs.append(str(p))
         except Exception as e:
              print(str(e) + " Paper does not have a body.")
     except Exception as e:
         print(str(e) + " when parsing the data with BeautifulSoup.")
-        
-   
 
     return abstract_paragraphs, body_paragraphs
     
@@ -123,6 +126,20 @@ def get_full_text(id):
     return record
     
 #in development
+
+def process_paragraphs(id, abstract, body):
+    '''
+        This method takes in the id of the paper and the two arrays which contain the paragraphs of the text.
+        For each paragraph, it splits it and applies different methods in order to determine the sentiment.
+        The method returns an element which will be added to the specific year's data.
+    '''
+    pattern = "<[^>]*>"
+    for paragraph in abstract:
+        cleaned_paragraph = re.sub(pattern, "", str(paragraph))
+        paragraph_sentences = list(cleaned_paragraph.split("."))
+        for sentence in paragraph_sentences:
+            print("--------------------")
+            print(sentence)
     
 # set the email for entrez and configure the pretty printer
 Entrez.email = "stevenpintea@gmail.com"
@@ -137,7 +154,7 @@ finish = time.perf_counter()
 
 print(f'Finished in {round(finish - start, 2)} seconds(s)')
 
-for index, docID in enumerate(results):
+for index, docID in enumerate([7899787]):
     if index % 25 == 0 and index > 0:
         time.sleep(3)
         print("Avoid an error created by the script requesting information to often.")
@@ -150,9 +167,9 @@ for index, docID in enumerate(results):
     if document_text != "":
         good += 1
         abstract_paragraphs, body_paragraphs = data_cleaner(document_text)
-        #if len(abstract_paragraphs) == 0 and len(body_paragraphs) != 0:
-            #print(body_paragraphs)
-            #break
+        if len(abstract_paragraphs) != 0 and len(body_paragraphs) != 0:
+            #only do something if we have both sections of a text
+            process_paragraphs(docID, abstract_paragraphs, body_paragraphs)
 
     #if good == 12: break
     print(docID)
