@@ -20,13 +20,24 @@
 from Bio import Entrez
 from Bio import Medline
 from bs4 import BeautifulSoup
+from nltk.probability import FreqDist
+from nltk.corpus import stopwords  
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
+from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+from AnaliseSentiment.sentiment_AnalyseSentiment import AnalyseSentiment
+import matplotlib.pyplot as plt
+import pandas as pd
 import datetime
 import time
 import pprint
 import re
+import nltk
 
 bad = 0
 good = 0
+all_words_used = []
+
 
 def get_pmc_ids(number = 0, requested_year = datetime.datetime.now().year):
     '''
@@ -124,7 +135,20 @@ def get_full_text(id):
         print(str(e) + " for ID:" + str(id))
 
     return record
-    
+ 
+def most_used_words(sentence):
+    '''
+        Method used to gather data about the words used by scientists.
+    '''
+    global all_words_used
+
+    stop_words = set(stopwords.words('english'))
+    porter = PorterStemmer()
+    wt_words = word_tokenize(sentence)
+    all_words_used += [porter.stem(w.lower()) for w in wt_words if not w.lower() in stop_words and len(porter.stem(w.lower())) >= 4]
+
+    return all_words_used
+
 #in development
 
 def process_paragraphs(id, abstract, body):
@@ -133,13 +157,37 @@ def process_paragraphs(id, abstract, body):
         For each paragraph, it splits it and applies different methods in order to determine the sentiment.
         The method returns an element which will be added to the specific year's data.
     '''
+    global all_words_used
     pattern = "<[^>]*>"
+    regex = re.compile('[^a-zA-Z]')
+
     for paragraph in abstract:
+        abstract_sentiment_by_sum_AnalyseSentiment = 0
+
         cleaned_paragraph = re.sub(pattern, "", str(paragraph))
         paragraph_sentences = list(cleaned_paragraph.split("."))
         for sentence in paragraph_sentences:
-            print("--------------------")
-            print(sentence)
+            cleaned_sentence = regex.sub(" ", sentence)
+            all_words_used = most_used_words(cleaned_sentence)
+            abstract_sentiment_by_sum_AnalyseSentiment += AnalyseSentiment().Analyse(cleaned_sentence)
+        abstract_sentiment_by_average_AnalyseSentiment = abstract_sentiment_by_sum_AnalyseSentiment / len(paragraph_sentences)
+
+        print(abstract_sentiment_by_sum_AnalyseSentiment)
+        print(abstract_sentiment_by_average_AnalyseSentiment)
+        print(len(paragraph_sentences) * 0.5)
+
+    for paragraph in body:
+        body_sentiment_by_sum_AnalyseSentiment = 0
+        body_sentiment_by_average_AnalyseSentiment = 0
+
+        cleaned_paragraph = re.sub(pattern, "", str(paragraph))
+        paragraph_sentences = list(cleaned_paragraph.split("."))
+        for sentence in paragraph_sentences:
+            cleaned_sentence = regex.sub(" ", sentence)
+            all_words_used = most_used_words(cleaned_sentence)
+        body_sentiment_by_average_AnalyseSentiment /= len(paragraph_sentences)
+
+    return all_words_used
     
 # set the email for entrez and configure the pretty printer
 Entrez.email = "stevenpintea@gmail.com"
@@ -154,7 +202,7 @@ finish = time.perf_counter()
 
 print(f'Finished in {round(finish - start, 2)} seconds(s)')
 
-for index, docID in enumerate([7899787]):
+for index, docID in enumerate(results):
     if index % 25 == 0 and index > 0:
         time.sleep(3)
         print("Avoid an error created by the script requesting information to often.")
@@ -165,15 +213,23 @@ for index, docID in enumerate([7899787]):
 
     document_text = get_full_text(id = str(docID))
     if document_text != "":
-        good += 1
         abstract_paragraphs, body_paragraphs = data_cleaner(document_text)
         if len(abstract_paragraphs) != 0 and len(body_paragraphs) != 0:
             #only do something if we have both sections of a text
-            process_paragraphs(docID, abstract_paragraphs, body_paragraphs)
+            all_words_used = process_paragraphs(docID, abstract_paragraphs, body_paragraphs)
+        good += 1
 
-    #if good == 12: break
+    if good == 1: break
     print(docID)
 
+data_analysis = nltk.FreqDist(all_words_used)
+data_analysis.plot(50, cumulative=False)
+
+wordcloud = WordCloud().generate(" ".join(all_words_used))
+
+plt.imshow(wordcloud)
+plt.axis("off")
+plt.show()
 
 print("Unable   " +   str(bad))
 print("Good   " +   str(good))
