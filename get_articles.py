@@ -307,26 +307,6 @@ def process_paragraphs(year, id, abstract, body):
     else: nr_neutral_TextBlob += 1
 
     return tuple(paper_sections_data), tuple(one_paper_sentimental_sentences)
-    
-
-
-
-def run2():
-
-   
-    data_analysis = nltk.FreqDist(all_words_used)
-    data_analysis.plot(50, cumulative=False)
-
-    wordcloud = WordCloud().generate(" ".join(all_words_used))
-
-    plt.imshow(wordcloud)
-    plt.axis("off")
-    plt.show()
-
-
-
-
-
 
 def run(wanted_year):
     '''
@@ -366,7 +346,7 @@ def run(wanted_year):
 
     for index, docID in enumerate(results):
         if index % 25 == 0 and index > 0:
-            time.sleep(2)
+            time.sleep(1)
             print("Avoid an error created by the script requesting information to often.")
 
         document_text = get_full_text(id = str(docID))
@@ -383,7 +363,7 @@ def run(wanted_year):
                 
                 processed_papers += 1
 
-        if processed_papers == 5: break
+        if processed_papers == 10: break
 
     year_overall.append(processed_papers)
     year_overall.append(nr_positive_AnalyseSentiment)
@@ -402,4 +382,8 @@ def run(wanted_year):
     df_sentences.to_csv(str(wanted_year) + '_sentences', index = None, header=True)
     df_papers.to_csv(str(wanted_year) + '_papers', index = None, header=True)
 
+import timeit
+a = timeit.default_timer()
 run(2021)
+b = timeit.default_timer()
+print(b-a)
