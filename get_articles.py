@@ -130,6 +130,7 @@ def get_full_text(id):
         Any additional fields that might be relevant will be introduced.
         Returns the text as string or empty string if the paper is not available.
     '''
+    record = ""
     try:
         handle = Entrez.efetch(db = 'pmc', id = id, retmode = 'xml')
         record = handle.read().decode('utf-8')
@@ -332,8 +333,13 @@ def run(wanted_year):
          'nr_pos_textBlobSentiment', 'nr_neg_textBlobSentiment', 'nr_neutral_textBlobSentiment']
 
     df_sentences = pd.DataFrame(columns = columns_sentences)
-    df_year = pd.DataFrame(columns = columns_year_overall)
     df_papers = pd.DataFrame(columns = columns_papers_sections)
+
+    try:
+        df_year = pd.read_csv('years')
+    except:
+        df_year = pd.DataFrame(columns = columns_year_overall)
+        print("No CSV")
 
     # set the email for entrez and configure the pretty printer
     Entrez.email = "stevenpintea@gmail.com"
@@ -342,7 +348,8 @@ def run(wanted_year):
 
     all_available_papers = len(results)
     year_overall = [wanted_year, all_available_papers]
-
+    # the results vector can be modified here
+    results.sort() #keep ids sorted, so I can split them into chunks of 1000
 
     for index, docID in enumerate(results):
         if index % 25 == 0 and index > 0:
@@ -354,6 +361,7 @@ def run(wanted_year):
             abstract_paragraphs, body_paragraphs = data_cleaner(document_text)
             if len(abstract_paragraphs) != 0 and len(body_paragraphs) != 0:
                 #only do something if we have both sections of a text
+               
                 paper_data, paper_sentimental_sentences = process_paragraphs(wanted_year, docID, abstract_paragraphs, body_paragraphs)
 
                 df_papers = df_papers.append(pd.Series(paper_data, index = df_papers.columns), ignore_index = True)
@@ -363,7 +371,7 @@ def run(wanted_year):
                 
                 processed_papers += 1
 
-        if processed_papers == 10: break
+        if processed_papers == 1000: break
 
     year_overall.append(processed_papers)
     year_overall.append(nr_positive_AnalyseSentiment)
@@ -378,12 +386,13 @@ def run(wanted_year):
 
     df_year = df_year.append(pd.Series(tuple(year_overall), index = df_year.columns), ignore_index = True)
 
-    df_year.to_csv(str(wanted_year), index = None, header=True)
+    df_year.to_csv('years', index = None, header=True)
     df_sentences.to_csv(str(wanted_year) + '_sentences', index = None, header=True)
     df_papers.to_csv(str(wanted_year) + '_papers', index = None, header=True)
 
-import timeit
-a = timeit.default_timer()
-run(2021)
-b = timeit.default_timer()
-print(b-a)
+
+years = [ 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007]
+for i in years:
+    run(i)
+    print("Done " + str(i))
+    
