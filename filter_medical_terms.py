@@ -1,3 +1,6 @@
+'''
+    Script used for filtering the medical terms based on some criteria.
+'''
 import pandas as pd 
 from nltk.corpus import wordnet, stopwords 
 

@@ -1,3 +1,7 @@
+'''
+    This method is an implementation of the open source TextBlob library.
+'''
+
 from textblob import TextBlob
 from collections import OrderedDict
 

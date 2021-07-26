@@ -1,3 +1,7 @@
+'''
+    This script extracts different information about words.
+'''
+
 from nltk import word_tokenize, pos_tag
 from nltk.corpus import wordnet, stopwords 
 import pandas as pd

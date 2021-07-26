@@ -1,3 +1,8 @@
+'''
+    This method uses VADER to measure the sentiment score.
+    The thresholds can be changed.
+'''
+
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 class AnalyseSentiment:

@@ -30,7 +30,7 @@ class SWN_Analyser():
         """
             Method used to calculate the sentiment of a sentence.
             0 is neutral, -1 is negative and +1 is positive
-            Everything in between is the calculaed sentiment
+            The threshold can be manually modified.
         """
         lemmatizer = WordNetLemmatizer()
         sentiment = 0.0
@@ -56,4 +56,7 @@ class SWN_Analyser():
             #default is neutral
             return 0
 
-        return sentiment
+
+        if sentiment > 0.1: return "POSITIVE"
+        elif sentiment <= 0.1: return "NEGATIVE"
+
